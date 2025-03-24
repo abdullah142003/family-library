@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مكتبتي العائلية</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+    table, th, td {
+      border: 1px solid #ddd;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #f4f4f4;
+    }
+    .available {
+      color: green;
+    }
+    .borrowed {
+      color: red;
+    }
+    input[type="text"], input[type="date"] {
+      padding: 5px;
+      margin-bottom: 10px;
+    }
+    button {
+      padding: 5px 10px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .leaderboard {
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <h1>مرحبًا بمكتبتنا العائلية!</h1>
+
+  <h2>إضافة كتاب جديد:</h2>
+  <input type="text" id="bookNameInput" placeholder="اسم الكتاب">
+  <input type="text" id="authorInput" placeholder="المؤلف">
+  <input type="text" id="categoryInput" placeholder="التصنيف">
+  <button onclick="addBook()">إضافة كتاب</button>
+
+  <h2>قائمة الكتب:</h2>
+  <table id="booksTable">
+    <tr>
+      <th>اسم الكتاب</th>
+      <th>المؤلف</th>
+      <th>التصنيف</th>
+      <th>حالة الكتاب</th>
+      <th>اسم المستعير</th>
+      <th>تاريخ الاستعارة</th>
+      <th>تاريخ الإرجاع المتوقع</th>
+      <th>إجراء</th>
+    </tr>
+  </table>
+
+  <div class="leaderboard">
+    <h2>أكثر الأشخاص قراءة:</h2>
+    <ol id="leaderboardList"></ol>
+  </div>
+
+  <script>
+    const books = [];
+    const leaderboard = {};
+
+    // دالة إضافة كتاب جديد
+    function addBook() {
+      const bookName = document.getElementById('bookNameInput').value.trim();
+      const author = document.getElementById('authorInput').value.trim();
+      const category = document.getElementById('categoryInput').value.trim();
+
+      if (!bookName || !author || !category) {
+        alert("يرجى ملء جميع الحقول!");
+        return;
+      }
+
+      const newBook = {
+        name: bookName,
+        author: author,
+        category: category,
+        status: 'متاح',
+        borrower: '-',
+        borrowDate: '-',
+        returnDate: '-'
+      };
+
+      books.push(newBook);
+      renderBooksTable();
+      clearInputs();
+    }
+
+    // دالة عرض الكتب في الجدول
+    function renderBooksTable() {
+      const tableBody = document.getElementById('booksTable').getElementsByTagName('tbody')[0];
+      tableBody.innerHTML = '';
+
+      books.forEach((book, index) => {
+        const row = document.createElement('tr');
+
+        row.innerHTML = `
+          <td>${book.name}</td>
+          <td>${book.author}</td>
+          <td>${book.category}</td>
+          <td class="status ${book.status === 'متاح' ? 'available' : 'borrowed'}">${book.status}</td>
+          <td>${book.borrower}</td>
+          <td>${book.borrowDate}</td>
+          <td>${book.returnDate}</td>
+          <td><button onclick="${book.status === 'متاح' ? `borrowBook(${index})` : `returnBook(${index})`}">${book.status === 'متاح' ? 'استعارة' : 'إرجاع'}</button></td>
+        `;
+
+        tableBody.appendChild(row);
+      });
+
+      updateLeaderboard();
+    }
+
+    // دالة استعارة كتاب
+    function borrowBook(index) {
+      const borrower = prompt("من فضلك أدخل اسمك:");
+      if (borrower) {
+        const borrowDate = prompt("أدخل تاريخ الاستعارة (YYYY-MM-DD):");
+        const returnDate = prompt("أدخل تاريخ الإرجاع المتوقع (YYYY-MM-DD):");
+
+        if (borrowDate && returnDate) {
+          books[index].status = 'مستعار';
+          books[index].borrower = borrower;
+          books[index].borrowDate = borrowDate;
+          books[index].returnDate = returnDate;
+
+          renderBooksTable();
+        } else {
+          alert("يرجى إدخال تواريخ صحيحة!");
+        }
+      }
+    }
+
+    // دالة إرجاع كتاب
+    function returnBook(index) {
+      books[index].status = 'متاح';
+      books[index].borrower = '-';
+      books[index].borrowDate = '-';
+      books[index].returnDate = '-';
+
+      renderBooksTable();
+    }
+
+    // دالة تحديث قائمة الأكثر قراءة
+    function updateLeaderboard() {
+      // تصفير القائمة
+      for (const key in leaderboard) {
+        delete leaderboard[key];
+      }
+
+      // حساب عدد الاستعارات لكل شخص
+      books.forEach(book => {
+        if (book.borrower !== '-') {
+          if (leaderboard[book.borrower]) {
+            leaderboard[book.borrower]++;
+          } else {
+            leaderboard[book.borrower] = 1;
+          }
+        }
+      });
+
+      // عرض القائمة مرتبة
+      const sortedLeaderboard = Object.entries(leaderboard)
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, count]) => `<li>${name}: ${count} كتب</li>`)
+        .join('');
+
+      document.getElementById('leaderboardList').innerHTML = sortedLeaderboard || '<li>لا توجد بيانات حتى الآن.</li>';
+    }
+
+    // دالة مسح الحقول بعد الإضافة
+    function clearInputs() {
+      document.getElementById('bookNameInput').value = '';
+      document.getElementById('authorInput').value = '';
+      document.getElementById('categoryInput').value = '';
+    }
+  </script>
+</body>
+</html>
