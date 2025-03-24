@@ -201,5 +201,43 @@
       document.getElementById('categoryInput').value = '';
     }
   </script>
+  <script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "SENDER_ID",
+    appId: "APP_ID"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Add a book to Firestore
+  async function addBookToDatabase(book) {
+    await addDoc(collection(db, "books"), book);
+  }
+
+  // Fetch books from Firestore
+  async function fetchBooksFromDatabase() {
+    const querySnapshot = await getDocs(collection(db, "books"));
+    querySnapshot.forEach((doc) => {
+      console.log(doc.id, " => ", doc.data());
+    });
+  }
+
+  // Update book status in Firestore
+  async function updateBookStatus(id, updates) {
+    const bookRef = doc(db, "books", id);
+    await updateDoc(bookRef, updates);
+  }
+</script>
 </body>
 </html>
